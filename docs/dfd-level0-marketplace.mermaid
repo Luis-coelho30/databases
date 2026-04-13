@@ -1,0 +1,27 @@
+flowchart LR
+    %% Entidades externas
+    Customer[Cliente]
+    Seller[Vendedor]
+    PaymentGateway[Gateway de Pagamento]
+
+    %% Processo principal
+    System((Sistema E-commerce))
+
+    %% Armazenamento
+    DB[(Banco de Dados)]
+
+    %% Fluxos Cliente
+    Customer -->|Cadastro / Login / Compra| System
+    System -->|Confirmação / Status do Pedido| Customer
+
+    %% Fluxos Vendedor
+    Seller -->|Cadastro de Produtos / Estoque| System
+    System -->|Pedidos Recebidos / Relatórios| Seller
+
+    %% Fluxos Pagamento
+    System -->|Solicitação de Pagamento| PaymentGateway
+    PaymentGateway -->|Status do Pagamento| System
+
+    %% Banco de dados
+    System -->|"Persistência (users, orders, products, payments)"| DB
+    DB -->|Dados| System
