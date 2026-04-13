@@ -1,0 +1,213 @@
+Table "user" {
+  "user_id" INT [pk, not null, increment]
+  Note: 'Users in the marketplace'
+}
+
+Table "customer" {
+  "customer_id" INT [pk, not null]
+  Note: 'Customers in the marketplace'
+}
+
+Table "seller" {
+  "seller_id" INT [pk, not null]
+  Note: 'Sellers in the marketplace'
+}
+
+Table "address" {
+  "address_id" INT [pk, not null, increment]
+  "customer_id" INT [not null]
+  Indexes {
+    customer_id [name: "idx_address_customer"]
+  }
+  Note: 'Billing and delivery addresses linked to a customer'
+}
+
+Table "seller_address" {
+  "seller_address_id" INT [pk, not null, increment]
+  "seller_id" INT [not null]
+  Indexes {
+    seller_id [name: "idx_seller_address_seller"]
+  }
+  Note: 'Physical addresses for sellers (store, warehouse, fiscal)'
+}
+
+Table "product" {
+  "product_id" INT [pk, not null, increment]
+  "seller_id" INT [not null]
+  Indexes {
+    seller_id [name: "idx_product_seller"]
+  }
+  Note: 'Products created by sellers'
+}
+
+Table "product_variant" {
+  "variant_id" INT [pk, not null, increment]
+  "product_id" INT [not null]
+  Indexes {
+    product_id [name: "idx_variant_product"]
+  }
+  Note: 'Variants of products created by sellers (allows for different colors or products specifications)'
+}
+
+Table "category" {
+  "category_id" INT [pk, not null, increment]
+  "parent_id" INT
+  Note: 'Product categories (hierarchical)'
+}
+
+Table "product_category" {
+  "category_id" INT [not null]
+  "product_id" INT [not null]
+  Indexes {
+    (product_id, category_id) [pk, name: "pk_product_category"]
+  }
+  Note: 'Join table for product <-> category relationship (N:N)'
+}
+
+Table "product_image" {
+  "image_id" INT [pk, not null, increment]
+  "variant_id" INT [not null]                                        
+  Note: 'Photos linked to a product'
+}
+
+Table "orders" {
+  "order_id" INT [pk, not null, increment]
+  "customer_id" INT [not null]
+  "delivery_address_id" INT [not null]
+  Indexes {
+    customer_id [name: "idx_orders_customer"]
+    delivery_address_id [name: "idx_orders_delivery_addr"]
+  }
+  Note: 'Represents an order made by a customer'
+}
+
+Table "order_item" {
+  "order_item_id" INT [pk, not null, increment]
+  "order_id" INT [not null]
+  "variant_id" INT [not null]
+  Indexes {
+    order_id [name: "idx_order_item_order"]
+    variant_id [name: "idx_order_item_variant"]
+  }
+  Note: 'Items of an order references product_variant for full SKU/price snapshot'
+}
+
+Table "order_address" {
+  "order_address_id" INT [pk, not null, increment]
+  "order_id" INT [not null]
+  Note: 'Represents an order address - Dereferences address table'
+}
+
+Table "order_status_history" {
+  "history_id" INT [pk, not null, increment]
+  "order_id" INT [not null]
+  Note: 'Contains the history of changes in order status'
+}
+
+Table "payment" {
+  "payment_id" INT [pk, not null, increment]
+  "order_id" INT [not null]
+  Indexes {
+    order_id [name: "idx_payment_order"]
+  }
+  Note: 'Represents a payment linked to an order'
+}
+
+Table "charge" {
+  "charge_id" INT [pk, not null, increment]
+  "payment_id" INT [not null]
+  Indexes {
+    payment_id [name: "idx_charge_payment"]
+  }
+  Note: 'Represents a charge attempt'
+}
+
+Table "charge_status_history" {
+  "history_id" INT [pk, not null, increment]
+  "charge_id" INT [not null]
+  Note: 'Contains the history of charge_attempts'
+}
+
+Table "settlement" {
+  "settlement_id" INT [pk, not null, increment]
+  "charge_id" INT [not null]
+  Indexes {
+    charge_id [name: "idx_settlement_charge"]
+  }
+  Note: 'Represents actual money settlement (supports installments)'
+}
+
+Table "fee_rule" {
+  "fee_rule_id" INT [pk, not null, increment]
+  Note: 'Defines marketplace fee strategies'
+}
+
+Table "applied_fee" {
+  "applied_fee_id" INT [pk, not null, increment]
+  "charge_id" INT [not null]
+  "fee_rule_id" INT [not null]
+  Indexes {
+    charge_id [name: "idx_applied_fee_charge"]
+  }
+  Note: 'Snapshot of fee applied at charge time'
+}
+
+Table "seller_balance" {
+  "seller_id" INT [pk, not null]
+  Checks {
+    `balance >= 0` [name: 'ck_balance']
+  }
+  Note: 'Tracks current balance available to seller'
+}
+
+Table "payout" {
+  "payout_id" INT [pk, not null, increment]
+  "seller_id" INT [not null]
+  Note: 'Represents money transferred to seller'
+}
+
+Ref "fk_customer_user":"user"."user_id" < "customer"."customer_id" [delete: cascade]
+
+Ref "fk_seller_user":"user"."user_id" < "seller"."seller_id" [delete: cascade]
+
+Ref "fk_address_customer":"customer"."customer_id" < "address"."customer_id" [delete: cascade]
+
+Ref "fk_seller_address_seller":"seller"."seller_id" < "seller_address"."seller_id" [delete: cascade]
+
+Ref "fk_product_seller":"seller"."seller_id" < "product"."seller_id" [delete: cascade]
+
+Ref "fk_variant_product":"product"."product_id" < "product_variant"."product_id" [delete: cascade]
+
+Ref "fk_category_parent":"category"."category_id" < "category"."parent_id" [delete: set null]
+
+Ref "fk_category":"category"."category_id" < "product_category"."category_id" [delete: cascade]
+
+Ref "fk_product":"product"."product_id" < "product_category"."product_id" [delete: cascade]
+
+Ref "fk_image_product":"product_variant"."variant_id" < "product_image"."variant_id" [delete: cascade]
+
+Ref "fk_order_customer":"customer"."customer_id" < "orders"."customer_id"
+
+Ref "fk_item_variant":"product_variant"."variant_id" < "order_item"."variant_id" [update: cascade, delete: restrict]
+
+Ref "fk_item_order":"orders"."order_id" < "order_item"."order_id" [delete: cascade]
+
+Ref "fk_order_address_order":"orders"."order_id" < "order_address"."order_id" [delete: cascade]
+
+Ref "fk_history_order":"orders"."order_id" < "order_status_history"."order_id" [delete: cascade]
+
+Ref "fk_payment_order":"orders"."order_id" < "payment"."order_id" [delete: cascade]
+
+Ref "fk_charge_payment":"payment"."payment_id" < "charge"."payment_id" [delete: cascade]
+
+Ref "fk_charge_history_charge":"charge"."charge_id" < "charge_status_history"."charge_id" [delete: cascade]
+
+Ref "fk_settlement_charge":"charge"."charge_id" < "settlement"."charge_id" [delete: cascade]
+
+Ref "fk_applied_fee_charge":"charge"."charge_id" < "applied_fee"."charge_id" [delete: cascade]
+
+Ref "fk_applied_fee_rule":"fee_rule"."fee_rule_id" < "applied_fee"."fee_rule_id"
+
+Ref "fk_balance_seller":"seller"."seller_id" < "seller_balance"."seller_id" [delete: cascade]
+
+Ref "fk_payout_seller":"seller"."seller_id" < "payout"."seller_id"
