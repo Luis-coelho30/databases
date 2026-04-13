@@ -5,9 +5,73 @@
 ## Diagramas de Fluxo de Dados
 
 ### Nível 0
+```mermaid
+flowchart LR
+    %% Entidades externas
+    Customer[Cliente]
+    Seller[Vendedor]
+    PaymentGateway[Gateway de Pagamento]
 
-![DFD Nível 0](./docs/dfd-level0-marketplace.mermaid)
+    %% Processo principal
+    System((Sistema E-commerce))
+
+    %% Armazenamento
+    DB[(Banco de Dados)]
+
+    %% Fluxos Cliente
+    Customer -->|Cadastro / Login / Compra| System
+    System -->|Confirmação / Status do Pedido| Customer
+
+    %% Fluxos Vendedor
+    Seller -->|Cadastro de Produtos / Estoque| System
+    System -->|Pedidos Recebidos / Relatórios| Seller
+
+    %% Fluxos Pagamento
+    System -->|Solicitação de Pagamento| PaymentGateway
+    PaymentGateway -->|Status do Pagamento| System
+
+    %% Banco de dados
+    System -->|"Persistência (users, orders, products, payments)"| DB
+    DB -->|Dados| System
+```
 
 ### Nível 1
+```mermaid
+flowchart LR
+    %% Entidades Externas
+    Customer[Cliente]
+    Seller[Vendedor]
+    PaymentGateway[Gateway de Pagamento]
 
-![DFD Nível 1](./docs/dfd-level1-marketplace.mermaid)
+    subgraph System ["Sistema E-commerce (Backend)"]
+        direction TB
+        Auth[Módulo de Usuário]
+        Catalog[Gestão de Catálogo]
+        OrderMgmt[Processamento de Pedidos]
+        Finance[Motor Financeiro]
+    end
+
+    DB[(Banco de Dados)]
+
+    %% Fluxos do Cliente
+    Customer -->|Login / Endereços| Auth
+    Customer -->|Navegação / Compra| Catalog
+    Catalog -->|Geração de Order| OrderMgmt
+    OrderMgmt -->|Status / Histórico| Customer
+
+    %% Fluxos do Vendedor
+    Seller -->|Produtos / SKU / Estoque| Catalog
+    Seller -->|"Consulta de Saldo (Balance) / Payout"| Finance
+    OrderMgmt -->|Notificação de Venda| Seller
+
+    %% Fluxo de Pagamento e Financeiro
+    OrderMgmt -->|Solicitação| Finance
+    Finance <-->|Autorização / Captura| PaymentGateway
+    Finance -->|"Cálculo de Comissões (Fee Rules)"| Finance
+
+    %% Persistência Detalhada
+    Auth -->|"user, customer, address"| DB
+    Catalog -->|"product, variant, category"| DB
+    OrderMgmt -->|"orders, order_item (snapshots)"| DB
+    Finance -->|"payment, settlement, applied_fee"| DB
+```
