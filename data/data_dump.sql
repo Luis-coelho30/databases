@@ -445,7 +445,7 @@ INSERT INTO settlement (charge_id, amount, installment, settlement_status, settl
   (2,   716.5, 3, 'SETTLED', '2024-04-18 00:00:00'),
   (2,   716.5, 4, 'PENDING',  NULL),
   (2,   716.5, 5, 'PENDING',  NULL),
-  (2,   716.5, 6, 'PENDING',  NULL),
+  (2,   716.5, 6, 'PENDING',  NULL);
 
 -- =============================================================================
 -- SUB-DOMAIN: FINANCE — seller_balance
